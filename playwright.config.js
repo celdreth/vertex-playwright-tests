@@ -1,22 +1,27 @@
 // @ts-check
 import { defineConfig, devices } from '@playwright/test';
-/**
- * @see https://playwright.dev/docs/test-configuration
- */
+
 export default defineConfig({
   testDir: './tests',
+  fullyParallel: true,
+  retries: process.env.CI ? 2 : 0,
+  workers: process.env.CI ? 1 : undefined,
+  
   projects: [
     {
       name: 'chromium',
-      use: { browserName: 'chromium' },
+      use: { ...devices['Desktop Chrome'] },
     },
-  //  {
-  //    name: 'firefox',
-  //    use: { browserName: 'firefox' },
-  //  },
+  ],
+  
+  reporter: [
+    ['html'],
+    ['playwright-ctrf-json-reporter', {
+      outputDir: 'ctrf',
+      outputFile: 'ctrf-report.json',
+    }]
   ],
 });
-
    // {
    //   name: 'webkit',
    //   use: { ...devices['Desktop Safari'] },

@@ -93,6 +93,9 @@ test.describe('Newsletter Form Submission - Multi-Locale', () => {
             console.log(`[${locale.name}] Checking input directly...`);
             await checkboxInput.check({ force: true });
           }
+          // Verify it actually checked
+            await expect(checkboxInput).toBeChecked({ timeout: 5000 });
+          }
         }
         // 8. Submit
         const submitBtn = interactionContext.locator('input[type="submit"], button[type="submit"], .submit').first();

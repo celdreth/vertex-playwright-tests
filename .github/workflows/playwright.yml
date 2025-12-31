@@ -4,23 +4,45 @@ on:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
+
 jobs:
   test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+
     - uses: actions/setup-node@v4
       with:
         node-version: lts/*
+        cache: 'npm' # 1. Automatically caches node_modules
+
     - name: Install dependencies
       run: npm ci
+
+    # 2. Cache Playwright Browsers to save ~2 minutes per run
+    - name: Get Playwright version
+      id: playwright-version
+      run: echo "version=$(npm ls @playwright/test --json | jq -r '.dependencies["@playwright/test"].version')" >> $GITHUB_OUTPUT
+
+    - name: Cache Playwright Browsers
+      uses: actions/cache@v4
+      id: playwright-cache
+      with:
+        path: ~/.cache/ms-playwright
+        key: ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}
+
     - name: Install Playwright Browsers
+      if: steps.playwright-cache.outputs.cache-hit != 'true'
       run: npx playwright install --with-deps
+
+    # 3. Generate a GitHub Step Summary so you see results in the UI
     - name: Run Playwright tests
-      run: npx playwright test
-    - uses: actions/upload-artifact@v4
+      run: npx playwright test --reporter=list,github
+
+    - name: Upload Artifacts
       if: ${{ !cancelled() }}
+      uses: actions/upload-artifact@v4
       with:
         name: playwright-report
         path: playwright-report/
