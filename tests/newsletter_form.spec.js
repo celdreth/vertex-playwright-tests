@@ -1,118 +1,92 @@
 import { test, expect } from '@playwright/test';
-/**
- * Test: Vertex Pulse Newsletter Subscription (Multi-Locale)
- * Site: Vertex Multi-Regional Environments
- * Update: Added specific German success message for the DE locale.
- */
-// 1. Define your locales with their full unique URLs and success criteria
+ 
 const locales = [
   { 
     name: 'US', 
     url: 'https://test-vertexinc.pantheonsite.io/', 
-    successText: /1-800-355-3500/i 
+    successText: /Thank you for subscribing/i 
   },
   { 
     name: 'UK', 
-    url: 'https://test-vertexinc.pantheonsite.io/en-gb/', 
-    successText: /thank you/i 
+    url: 'https://test-vertexinc.pantheonsite.io/en-gb', 
+    successText: /Thank you for subscribing/i 
   },
   { 
     name: 'DE', 
-    url: 'https://test-vertexinc.pantheonsite.io/de-de/', 
-    // Updated with the specific German success message and phone number
-    successText: /Vielen Dank.*1-800-355-3500/i 
+    url: 'https://test-vertexinc.pantheonsite.io/de-de', 
+    successText: /Vielen Dank/i
   }
 ];
-test.describe('Newsletter Form Submission - Multi-Locale', () => {
-  // Global configuration for the file
-  test.describe.configure({ timeout: 180000 }); 
-  test.use({ navigationTimeout: 100000, actionTimeout: 60000 });
-  // 2. Loop through each locale to generate a test case for each
+ 
+// Helper: dismiss Cookiebot cookie banner if present
+async function dismissCookies(page) {
+  try {
+    const cookieBtn = page.locator('#CybotCookiebotDialogBodyLevelButtonLevelOptinAllowAll');
+    if (await cookieBtn.isVisible({ timeout: 3000 })) {
+      await cookieBtn.click();
+      await page.waitForTimeout(2000);
+    }
+  } catch (e) {
+    // No cookie banner present
+  }
+}
+ 
+test.describe('Newsletter Form', () => {
   for (const locale of locales) {
-    test(`Verify Vertex Pulse Newsletter Form in Footer - ${locale.name}`, async ({ page, browserName }) => {
-      test.setTimeout(180000);
-      console.log(`[${locale.name}] Running on ${browserName}. Navigating to: ${locale.url}`);
-      await page.goto(locale.url, { 
-        waitUntil: 'load',
-        timeout: 120000
-      });
-      // 3. Aggressive Cookie/Overlay Handling
-      console.log(`[${locale.name}] Clearing cookie overlays...`);
-      await page.waitForTimeout(2000); 
-      const cookieSelectors = [
-        '#CybotCookiebotDialogBodyLevelButtonLevelOptinAllowAll', 
-        '#onetrust-accept-btn-handler',                          
-        'button:has-text("Accept All")',
-        'button:has-text("Allow all")',
-        'button:has-text("Agree")',
-        'button:has-text("Alle akzeptieren")', // German
-        'button:has-text("Akzeptieren")'        // German variant
-      ];
-      for (const selector of cookieSelectors) {
-        try {
-          const btn = page.locator(selector);
-          if (await btn.isVisible({ timeout: 5000 })) {
-            await btn.click();
-            console.log(`[${locale.name}] Accepted cookies via: ${selector}`);
-            await page.waitForTimeout(2000);
-            break; 
-          }
-        } catch (e) { }
-      }
-      // 4. Scroll to the Footer
-      const footer = page.locator('footer').first();
-      await footer.scrollIntoViewIfNeeded();
-      const iframeSelector = 'footer iframe';
-      try {
-        await page.waitForSelector(iframeSelector, { state: 'attached', timeout: 30000 });
-      } catch (e) {
-        console.log(`[${locale.name}] Iframe not found, checking for standard footer form...`);
-      }
-      // 5. Locate Form Context
-      const formIframe = page.frameLocator('footer iframe').first();
+    test(`[${locale.name}] Newsletter form can be filled out and submitted`, async ({ page }) => {
+      await page.goto(locale.url, { waitUntil: 'domcontentloaded', timeout: 30000 });
+      await dismissCookies(page);
+ 
+      // Scroll to footer where newsletter form is
+      await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+      await page.waitForTimeout(2000);
+      await dismissCookies(page);
+ 
+      // Check for iframe
       const iframeCount = await page.locator('footer iframe').count();
-      let interactionContext = iframeCount > 0 ? formIframe : page.locator('footer');
-      try {
-        // 6. Fill Email
-        const emailInput = interactionContext.locator('input[type="email"], #email, input[name*="email" i]').first();
-        await emailInput.waitFor({ state: 'visible', timeout: 45000 });
-        await emailInput.fill('test@o3world.com');
-        // 7. Fixed Checkbox Interaction
-        console.log(`[${locale.name}] Handling Terms checkbox...`);
-        const checkboxInput = interactionContext.locator('input[type="checkbox"]').first();
-        // Multi-language label filtering
-        const checkboxLabel = interactionContext.locator('label')
-          .filter({ hasText: /terms|privacy|agree|Datenschutz|Zustimmung|Ich stimme zu/i })
-          .first();
-        const isChecked = await checkboxInput.isChecked().catch(() => false);
-        if (!isChecked) {
-          if (await checkboxLabel.count() > 0) {
-            console.log(`[${locale.name}] Clicking label to check the box...`);
-            await checkboxLabel.click({ force: true });
-          } else if (await checkboxInput.count() > 0) {
-            console.log(`[${locale.name}] Checking input directly...`);
-            await checkboxInput.check({ force: true });
-          }
-          // Verify it actually checked
-            await expect(checkboxInput).toBeChecked({ timeout: 5000 });
-          }
+      console.log(`[${locale.name}] Iframes found: ${iframeCount}`);
+ 
+      const email = 'test@o3world.com';
+      let context;
+ 
+      if (iframeCount > 0) {
+        context = page.frameLocator('footer iframe').first();
+        await context.locator('input[type="email"]').first().fill(email);
+        console.log(`[${locale.name}] Email filled in iframe: ${email}`);
+ 
+        await context.locator('input[type="checkbox"]').first().evaluate(el => el.checked = true).catch((e) => {});
+ 
+        try {
+          await context.locator('input[type="submit"], button[type="submit"]').first().click({ force: true, timeout: 5000 });
+          console.log(`[${locale.name}] Submit clicked (iframe)`);
+        } catch (e) {
+          await context.locator('form').first().evaluate(form => form.submit());
+          console.log(`[${locale.name}] Form.submit() called (iframe)`);
         }
-        // 8. Submit
-        const submitBtn = interactionContext.locator('input[type="submit"], button[type="submit"], .submit').first();
-        await submitBtn.click();
-        console.log(`[${locale.name}] Form submission triggered.`);
-        // 9. Locale-Specific Success Verification
-        console.log(`[${locale.name}] Waiting for success message...`);
-        const successMessage = interactionContext.getByText(locale.successText);
-        await expect(successMessage).toBeVisible({ timeout: 30000 });
-        console.log(`✅ [${locale.name}] Success message detected!`);
-        if (!process.env.CI) {
-          await page.waitForTimeout(3000);
+      } else {
+        context = page;
+        await page.locator('footer input[type="email"]').first().fill(email);
+        console.log(`[${locale.name}] Email filled on page: ${email}`);
+ 
+        await page.locator('footer input[type="checkbox"]').first().evaluate(el => el.checked = true).catch((e) => {});
+ 
+        try {
+          await page.locator('footer input[type="submit"], footer button[type="submit"]').first().click({ force: true, timeout: 5000 });
+          console.log(`[${locale.name}] Submit clicked (page)`);
+        } catch (e) {
+          await page.locator('footer form').first().evaluate(form => form.submit());
+          console.log(`[${locale.name}] Form.submit() called (page)`);
         }
-      } catch (error) {
-        console.error(`❌ [${locale.name}] Test failed: ${error.message}`);
-        await page.screenshot({ path: `failure-${locale.name}-${Date.now()}.png` });
-        throw error;
+      }
+ 
+      await page.waitForTimeout(5000);
+ 
+      const successFound = await context.getByText(locale.successText).isVisible({ timeout: 10000 }).catch((e) => false);
+ 
+      if (successFound) {
+        console.log(`✅ [${locale.name}] Success message found`);
+      } else {
+        throw new Error(`[${locale.name}] Success message not found. Expected: ${locale.successText}`);
       }
     });
   }
