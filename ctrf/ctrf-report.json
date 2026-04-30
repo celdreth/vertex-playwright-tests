@@ -1,0 +1,80 @@
+{
+  "reportFormat": "CTRF",
+  "specVersion": "0.0.0",
+  "reportId": "43317735-01cc-4648-83f8-fcc7c1cf9887",
+  "timestamp": "2026-02-16T02:15:31.787Z",
+  "generatedBy": "playwright-ctrf-json-reporter",
+  "results": {
+    "tool": {
+      "name": "playwright"
+    },
+    "summary": {
+      "tests": 1,
+      "passed": 0,
+      "failed": 1,
+      "pending": 0,
+      "skipped": 0,
+      "other": 0,
+      "start": 1771208131946,
+      "stop": 1771208155471,
+      "suites": 0
+    },
+    "tests": [
+      {
+        "name": "Footer - US",
+        "status": "failed",
+        "duration": 21634,
+        "start": 1771208132,
+        "stop": 1771208154,
+        "message": "Error: page.goto: Target page, context or browser has been closed",
+        "trace": "Error: page.goto: Target page, context or browser has been closed\n    at goToFooter (C:\\PlayWrightAutomation\\tests\\footer.spec.js:60:16)\n    at C:\\PlayWrightAutomation\\tests\\footer.spec.js:185:13",
+        "snippet": "\u001b[0m \u001b[90m 58 |\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m goToFooter(page\u001b[33m,\u001b[39m url) {\n \u001b[90m 59 |\u001b[39m   \u001b[36mtry\u001b[39m {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 60 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(url\u001b[33m,\u001b[39m { waitUntil\u001b[33m:\u001b[39m \u001b[32m'domcontentloaded'\u001b[39m\u001b[33m,\u001b[39m timeout\u001b[33m:\u001b[39m \u001b[35m30000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 61 |\u001b[39m   } \u001b[36mcatch\u001b[39m (e) {\n \u001b[90m 62 |\u001b[39m     \u001b[36mif\u001b[39m (e\u001b[33m.\u001b[39mmessage\u001b[33m.\u001b[39mincludes(\u001b[32m'interrupted by another navigation'\u001b[39m)) {\n \u001b[90m 63 |\u001b[39m       \u001b[90m// Site triggered a redirect mid-load - wait for it to settle\u001b[39m\u001b[0m",
+        "rawStatus": "interrupted",
+        "tags": [],
+        "type": "e2e",
+        "filePath": "C:\\PlayWrightAutomation\\tests\\footer.spec.js",
+        "retries": 0,
+        "flaky": false,
+        "steps": [],
+        "suite": "chromium > footer.spec.js > Footer",
+        "attachments": [
+          {
+            "name": "screenshot",
+            "contentType": "image/png",
+            "path": "C:\\PlayWrightAutomation\\test-results\\footer-Footer-Footer---US-chromium\\test-failed-1.png"
+          },
+          {
+            "name": "video",
+            "contentType": "video/webm",
+            "path": "C:\\PlayWrightAutomation\\test-results\\footer-Footer-Footer---US-chromium\\video.webm"
+          },
+          {
+            "name": "trace",
+            "contentType": "application/zip",
+            "path": "C:\\PlayWrightAutomation\\test-results\\footer-Footer-Footer---US-chromium\\trace.zip"
+          }
+        ],
+        "stdout": [
+          "[US] Starting footer test for https://test-vertexinc.pantheonsite.io/\n",
+          "[US] Page loaded\n",
+          "[US] Scrolled to footer\n",
+          "[US] Footer is visible\n",
+          "[US] Found 44 footer links\n",
+          "[US] All 44 footer links have valid hrefs\n",
+          "[US] Testing sample links from each column...\n",
+          "[US] Solutions By Tax Process: https://test-vertexinc.pantheonsite.io/solutions/tax-process/tax-determination\n",
+          "[US] Solutions By Tax Type: https://test-vertexinc.pantheonsite.io/solutions/tax-type/sales-use-tax\n",
+          "[US] WARNING: Solutions By Integration failed: page.waitForTimeout: Test ended.\n",
+          "[US] WARNING: Support failed: page.goto: Target page, context or browser has been closed\n",
+          "[US] Testing Contact Us CTA...\n",
+          "[US] WARNING: Contact Us CTA not found or failed: page.goto: Target page, context or browser has been closed\n",
+          "[US] Testing social media icons...\n"
+        ],
+        "stderr": [],
+        "extra": {
+          "annotations": []
+        }
+      }
+    ]
+  }
+}
