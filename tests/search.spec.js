@@ -33,10 +33,7 @@ test.describe('Search Functionality', () => {
       console.log(`[${locale.name}] Page loaded`);
       
       // 2. Handle cookies
-      const cookieBtn = page.getByRole('button').filter({ 
-        name: /Accept|Agree|Akzeptieren|Zustimmen/i 
-      }).first();
-      
+      const cookieBtn = page.locator('#CybotCookiebotDialogBodyLevelButtonLevelOptinAllowAll');
       try {
         if (await cookieBtn.isVisible({ timeout: 5000 })) {
           await cookieBtn.click();
@@ -47,7 +44,7 @@ test.describe('Search Functionality', () => {
         console.log(`[${locale.name}] No cookie banner`);
       }
       
-      // 3. Click search button/chevron to open search
+      // 3. Click search button to open search
       const searchBtn = page.locator('#reveal-search-button0, button[data-reveal-menu-search], [aria-label*="Search"]').first();
       await expect(searchBtn).toBeVisible({ timeout: 10000 });
       console.log(`[${locale.name}] Search button found`);
@@ -56,7 +53,7 @@ test.describe('Search Functionality', () => {
       await page.waitForTimeout(2000);
       console.log(`[${locale.name}] Search clicked`);
       
-      // 4. Enter search term using JavaScript (input is hidden but functional)
+      // 4. Enter search term
       await page.evaluate((searchTerm) => {
         const input = document.querySelector('#edit-keys');
         if (input) {
@@ -68,7 +65,7 @@ test.describe('Search Functionality', () => {
       
       console.log(`[${locale.name}] Search term entered: "${locale.searchTerm}"`);
       
-      // 5. Submit search using JavaScript
+      // 5. Submit search
       await page.evaluate(() => {
         const input = document.querySelector('#edit-keys');
         if (input) {
@@ -83,14 +80,13 @@ test.describe('Search Functionality', () => {
       
       console.log(`[${locale.name}] Search submitted`);
       
-      // Wait for results page to load
       await page.waitForLoadState('networkidle');
       await page.waitForTimeout(3000);
       
       console.log(`[${locale.name}] Current URL: ${page.url()}`);
       
       // 6. Verify results appear
-      const results = page.locator('.field-content');
+      const results = page.locator('.search-results__result');
       const resultCount = await results.count();
       
       console.log(`[${locale.name}] Result count: ${resultCount}`);
@@ -100,9 +96,7 @@ test.describe('Search Functionality', () => {
       
       // 7. Check for pagination and test it
       const pagination = page.locator('.pager__items, .js-pager__items');
-      
       await page.waitForTimeout(1000);
-      
       const hasPagination = await pagination.count() > 0;
       
       if (hasPagination && await pagination.first().isVisible()) {
@@ -110,10 +104,9 @@ test.describe('Search Functionality', () => {
         
         const pageLinks = pagination.locator('a, button');
         const pageLinkCount = await pageLinks.count();
-        
         console.log(`[${locale.name}] ✅ ${pageLinkCount} pagination links found`);
         
-        // TEST 1: Click "Next" to page 2
+        // Click Next to page 2
         let nextButton = page.locator('.pager__items a').filter({ hasText: /next|›/i }).first();
         
         if (await nextButton.isVisible({ timeout: 3000 })) {
@@ -126,7 +119,7 @@ test.describe('Search Functionality', () => {
           console.log(`[${locale.name}] ✅ On page 2: ${page2Url}`);
           expect(page2Url).toContain('page=1');
           
-          // TEST 2: Click "Next" again to page 3
+          // Click Next to page 3
           nextButton = page.locator('.pager__items a').filter({ hasText: /next|›/i }).first();
           
           if (await nextButton.isVisible({ timeout: 3000 })) {
@@ -139,7 +132,7 @@ test.describe('Search Functionality', () => {
             console.log(`[${locale.name}] ✅ On page 3: ${page3Url}`);
             expect(page3Url).toContain('page=2');
             
-            // TEST 3: Click "Previous" back to page 2
+            // Click Previous back to page 2
             const prevButton = page.locator('.pager__items a').filter({ hasText: /previous|‹/i }).first();
             
             if (await prevButton.isVisible({ timeout: 3000 })) {
@@ -154,7 +147,7 @@ test.describe('Search Functionality', () => {
             }
           }
           
-          // Go back to page 1 for the rest of the test
+          // Return to page 1
           await page.goto(page.url().replace(/page=\d+/, 'page=0'));
           await page.waitForLoadState('networkidle');
           console.log(`[${locale.name}] Returned to page 1`);
@@ -167,22 +160,22 @@ test.describe('Search Functionality', () => {
       // 8. Click a search result
       console.log(`[${locale.name}] Looking for result to click...`);
       
-      // Try to find the specific target link first
+      // Try target link first, fall back to first result scoped inside results container
       let resultLink = page.locator(`a[href="${locale.targetLink}"]`).first();
       let linkExists = await resultLink.count() > 0;
       
       if (!linkExists) {
-        console.log(`[${locale.name}] Target link not found, using first article result`);
-        resultLink = page.locator('a[href*="/resources/"], a[href*="/ressourcen/"], a[href*="/solutions/"]').first();
+        console.log(`[${locale.name}] Target link not found, using first search result`);
+        resultLink = page.locator('.search-results__result a').first();
       }
       
-      let resultHref; // Declare here so it's available later
+      let resultHref;
       
       try {
         await expect(resultLink).toBeVisible({ timeout: 5000 });
         
         const resultTitle = await resultLink.innerText();
-        resultHref = await resultLink.getAttribute('href'); // Assign value here
+        resultHref = await resultLink.getAttribute('href');
         
         console.log(`[${locale.name}] Found link: "${resultTitle}"`);
         console.log(`[${locale.name}] Link href: ${resultHref}`);
@@ -196,15 +189,13 @@ test.describe('Search Functionality', () => {
         throw err;
       }
       
-       await page.waitForLoadState('networkidle');
-       await page.waitForTimeout(2000);
+      await page.waitForLoadState('networkidle');
+      await page.waitForTimeout(2000);
+      console.log(`[${locale.name}] Result page loaded`);
       
-       console.log(`[${locale.name}] Result page loaded`);
-      
-      // 9. Verify we navigated to a page (not staying on search results)
+      // 9. Verify we navigated away from search results
       const currentUrl = page.url();
       
-      // If still on search page, navigate directly to the result
       if (currentUrl.includes('/search')) {
         console.log(`[${locale.name}] ⚠️  Still on search page, navigating directly...`);
         const fullUrl = resultHref.startsWith('http') ? resultHref : `https://test-vertexinc.pantheonsite.io${resultHref}`;
@@ -216,7 +207,7 @@ test.describe('Search Functionality', () => {
       expect(finalUrl).not.toContain('/search');
       console.log(`[${locale.name}] ✅ Navigated to: ${finalUrl}`);
       
-      // 10. Verify the result page contains the search term (case-insensitive)
+      // 10. Verify result page contains the search term
       const pageContent = await page.locator('body').innerText();
       const containsSearchTerm = pageContent.toLowerCase().includes(locale.searchTerm.toLowerCase());
       
