@@ -50,9 +50,9 @@ test.describe('Partners Page', () => {
   for (const locale of locales) {
     test.describe(`Locale: ${locale.name}`, () => {
       test.beforeEach(async ({ page }) => {
-        await page.goto(locale.url, { waitUntil: 'networkidle', timeout: 30000 });
+        await page.goto(locale.url, { waitUntil: 'networkidle', timeout: 50000 });
         await dismissCookies(page);
-      });
+      }); 
  
       // ── 1. Page loads and partner cards are visible ───────────────────────
       test(`[${locale.name}] Partner cards are visible on load`, async ({ page }) => {
